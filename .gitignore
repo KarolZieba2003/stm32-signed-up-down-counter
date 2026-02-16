@@ -1,0 +1,19 @@
+# ignore Debug directory
+Debug/
+#ingore .settings directory
+.settings/
+
+Release/
+build/
+Bin/
+Obj/
+*.bin
+*.elf
+*.hex
+*.map
+*.o
+*.d
+*.su
+
+.metadata/
+.mxproject
