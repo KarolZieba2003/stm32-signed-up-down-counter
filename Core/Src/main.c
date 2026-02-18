@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "stdio.h"
+#include "string.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -51,8 +53,9 @@ int8_t LSB, MSB, sec_bit, third_bit;
 
 
 int8_t counter = 0b00000000;
+__IO ITStatus UartReady = SET;
 
-
+char buffer[20]; //Conversion to ASCII
 
 /* USER CODE END PV */
 
@@ -66,6 +69,9 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle);
+void USART2_IRQHandler(void);
 
 /* USER CODE END 0 */
 
@@ -77,7 +83,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  HAL_NVIC_EnableIRQ(USART2_IRQn); // Turns usart interrupts on
+  HAL_NVIC_SetPriority(USART2_IRQn, 0, 0); // a good practice is to define the priority of usart even when we only use one instance
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -107,10 +114,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-
-
-	  if(counter > 7)
+	  if(counter >= 8)
 	  {
 		counter = -8;
       }
@@ -130,9 +134,14 @@ int main(void)
 		HAL_GPIO_WritePin(GPIOC, third_bit_pin_Pin, third_bit);
 		HAL_GPIO_WritePin(GPIOA, MSB_Pin, MSB);
 		HAL_GPIO_WritePin(GPIOA, sign_pin_Pin, sign);
-		HAL_Delay(1500);
+
+		sprintf(buffer, "%d\r\n", counter);
+	    HAL_UART_Transmit_IT(&huart2, (uint8_t*)buffer, strlen(buffer));
+	    HAL_Delay(1500);
+
 		counter = counter + step;
 	  }
+
 
     /* USER CODE END WHILE */
 
@@ -287,6 +296,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 			step = (-1) * step;
 		}
 	}
+
+void USART2_IRQHandler(void){
+	HAL_UART_IRQHandler(&huart2);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle){
+	UartReady = SET; // Sets transmission flag: transfer complete to 1
+}
 
 /* USER CODE END 4 */
 
