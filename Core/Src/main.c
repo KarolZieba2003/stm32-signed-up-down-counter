@@ -49,7 +49,7 @@ volatile uint8_t button_state = 0;
 volatile int8_t step = 1;
 volatile int8_t sign;
 
-int8_t LSB, MSB, sec_bit, third_bit;
+int8_t LSb, MSb, first_bit, second_bit;
 
 
 int8_t counter = 0b00000000;
@@ -72,6 +72,12 @@ static void MX_USART2_UART_Init(void);
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle);
 void USART2_IRQHandler(void);
+
+int8_t manageCounting(int8_t dirOfCounting, int8_t number);
+int8_t manageLEDS(int8_t number);
+int8_t transmitNumbers(int8_t numberToPrint);
+int8_t changeDirection(int8_t direction);
+
 
 /* USER CODE END 0 */
 
@@ -114,34 +120,13 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if(counter >= 8)
-	  {
-		counter = -8;
-      }
-	  else if(counter < -8){
-		  counter = 7;
-	  }
-	  else
-	  {
-		LSB = counter & 1;
-	    sec_bit = (counter >> 1) & 1;
-		third_bit = (counter >> 2) & 1;
-		MSB = (counter >> 3) & 1;
-		sign = (counter >> 7) & 1;
+	  /* Convert number from decimal to binary representation*/
 
-		HAL_GPIO_WritePin(GPIOA, LSB_Pin, LSB);
-		HAL_GPIO_WritePin(GPIOA, second_bit_pin_Pin, sec_bit);
-		HAL_GPIO_WritePin(GPIOC, third_bit_pin_Pin, third_bit);
-		HAL_GPIO_WritePin(GPIOA, MSB_Pin, MSB);
-		HAL_GPIO_WritePin(GPIOA, sign_pin_Pin, sign);
+	  manageLEDS(counter);
 
-		sprintf(buffer, "%d\r\n", counter);
-	    HAL_UART_Transmit_IT(&huart2, (uint8_t*)buffer, strlen(buffer));
-	    HAL_Delay(1500);
+	  transmitNumbers(counter);
 
-		counter = counter + step;
-	  }
-
+	  counter = manageCounting(step, counter);
 
     /* USER CODE END WHILE */
 
@@ -249,10 +234,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, sign_pin_Pin|MSB_Pin|second_bit_pin_Pin|LSB_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, sign_Pin|MSb_Pin|first_bit_Pin|LSb_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(third_bit_pin_GPIO_Port, third_bit_pin_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(second_bit_GPIO_Port, second_bit_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : interrupt_13_Pin interrupt_0_Pin interrupt_1_Pin */
   GPIO_InitStruct.Pin = interrupt_13_Pin|interrupt_0_Pin|interrupt_1_Pin;
@@ -260,19 +245,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : sign_pin_Pin MSB_Pin second_bit_pin_Pin LSB_Pin */
-  GPIO_InitStruct.Pin = sign_pin_Pin|MSB_Pin|second_bit_pin_Pin|LSB_Pin;
+  /*Configure GPIO pins : sign_Pin MSb_Pin first_bit_Pin LSb_Pin */
+  GPIO_InitStruct.Pin = sign_Pin|MSb_Pin|first_bit_Pin|LSb_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : third_bit_pin_Pin */
-  GPIO_InitStruct.Pin = third_bit_pin_Pin;
+  /*Configure GPIO pin : second_bit_Pin */
+  GPIO_InitStruct.Pin = second_bit_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(third_bit_pin_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(second_bit_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
@@ -303,6 +288,41 @@ void USART2_IRQHandler(void){
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle){
 	UartReady = SET; // Sets transmission flag: transfer complete to 1
+}
+
+int8_t manageCounting(int8_t dirOfCounting, int8_t number){
+
+	number = number + dirOfCounting;
+
+	if (number > 7) number = -8;
+	else if(number < -8) number = 7;
+
+	return number;
+}
+
+int8_t manageLEDS(int8_t number){
+
+	LSb = number & 1;
+    first_bit = (number >> 1) & 1;
+	second_bit = (number >> 2) & 1;
+	MSb = (number >> 3) & 1;
+	sign = (number >> 7) & 1;
+
+	HAL_GPIO_WritePin(GPIOA, LSb_Pin, LSb);
+	HAL_GPIO_WritePin(GPIOA, first_bit_Pin, first_bit);
+	HAL_GPIO_WritePin(GPIOC, second_bit_Pin, second_bit);
+	HAL_GPIO_WritePin(GPIOA, MSb_Pin, MSb);
+	HAL_GPIO_WritePin(GPIOA, sign_Pin, sign);
+	HAL_Delay(150);
+
+	return 0;
+}
+
+int8_t transmitNumbers(int8_t numberToPrint){
+	sprintf(buffer, "%d\r\n", numberToPrint);
+    HAL_UART_Transmit_IT(&huart2, (uint8_t*)buffer, strlen(buffer));
+	HAL_Delay(1500);
+	return 0;
 }
 
 /* USER CODE END 4 */
