@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "ringbuffer.h"
 #include "stdio.h"
 #include "string.h"
 
@@ -50,12 +51,12 @@ volatile int8_t step = 1;
 volatile int8_t sign;
 
 int8_t LSb, MSb, first_bit, second_bit;
-
-
 int8_t counter = 0b00000000;
-__IO ITStatus UartReady = SET;
 
 char buffer[20]; //Conversion to ASCII
+
+RingBuffer txBuf;
+uint8_t txData;
 
 /* USER CODE END PV */
 
@@ -77,7 +78,7 @@ int8_t manageCounting(int8_t dirOfCounting, int8_t number);
 int8_t manageLEDS(int8_t number);
 int8_t transmitNumbers(int8_t numberToPrint);
 int8_t changeDirection(int8_t direction);
-
+uint8_t UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t len);
 
 /* USER CODE END 0 */
 
@@ -112,6 +113,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+
+  RingBuffer_Init(&txBuf);
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -286,8 +289,12 @@ void USART2_IRQHandler(void){
 	HAL_UART_IRQHandler(&huart2);
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle){
-	UartReady = SET; // Sets transmission flag: transfer complete to 1
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+  if(RingBuffer_GetDataLength(&txBuf) > 0) {
+    RingBuffer_Read(&txBuf, &txData, 1);
+    HAL_UART_Transmit_IT(huart, &txData, 1);
+  }
 }
 
 int8_t manageCounting(int8_t dirOfCounting, int8_t number){
@@ -320,9 +327,16 @@ int8_t manageLEDS(int8_t number){
 
 int8_t transmitNumbers(int8_t numberToPrint){
 	sprintf(buffer, "%d\r\n", numberToPrint);
-    HAL_UART_Transmit_IT(&huart2, (uint8_t*)buffer, strlen(buffer));
-	HAL_Delay(1500);
+	UART_Transmit(&huart2, (uint8_t*)buffer, strlen(buffer));
 	return 0;
+}
+
+uint8_t UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t len) {
+  if(HAL_UART_Transmit_IT(huart, pData, len) != HAL_OK) {
+    if(RingBuffer_Write(&txBuf, pData, len) != RING_BUFFER_OK)
+      return 0;
+  }
+  return 1;
 }
 
 /* USER CODE END 4 */
