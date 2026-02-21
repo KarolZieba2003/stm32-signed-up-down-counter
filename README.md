@@ -26,8 +26,9 @@ The core functionality relies on GPIO pins and the EXTI (External Interrupt) mod
 * Interrupt-Driven Counting:  
 Utilizes the EXTI module and GPIOs to handle inputs and counting logic. 
 * PC Communication: ~~Planned implementation of a communication system to exchange data between the MCU and a computer,  
-allowing the user to monitor which number is currently displayed on the LEDs.~~ 18/02/26 Implemented UART communication to monitor correctness of the displayed number. 
+allowing the user to monitor which number is currently displayed on the LEDs.~~ 18/02/26 Implemented UART interrupts communication to monitor correctness of the displayed number. 
 * Circular Buffer: ~~Planned implementation of a circular buffer which manages transmission queues. In this project it is not really necessary to implement such a buffer because UART has plenty of time to transmit data between the cycle of switching the LEDs but I'm planning to do it for educational purposes.~~ 20/02/26 With the help from Mastering STM32 book I implemented an early version of circular buffer.
+* KiCAD Scheme: Here I'm planning to add a KiCAD scheme of this project.
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
