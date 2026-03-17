@@ -10,7 +10,7 @@
     </td>
     <td width="50%" valign="middle">
       
-   <p> A hardware implementation of a reversible 2-bit binary counter based on the STM32F446RE MCU.</p>
+   <p> A hardware implementation of a reversible 4-bit binary counter based on the STM32F446RE MCU.</p>
       <ul>
         <li>Red LEDs: Show the current counter value (Binary representation).</li>
         <li>Green LED: Indicates counting direction (ON = Up, OFF = Down).</li>
